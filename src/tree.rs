@@ -53,24 +53,44 @@ impl Tree {
         }
     }
 }
-type Result = std::fmt::Result;
+
+type FmtResult = std::fmt::Result;
 impl Display for Tree {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        fn print_tree(node: &NodeRef, f: &mut Formatter<'_>, level: usize, prefix: &str) -> Result {
-            writeln!(f, "{}{}{}", " ".repeat(level * 4), prefix, node.value)?;
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        fn print_tree(
+            node: &NodeRef,
+            f: &mut Formatter<'_>,
+            prefix: &str,
+            is_left: bool,
+        ) -> FmtResult {
+            writeln!(
+                f,
+                "{}{}{}",
+                prefix,
+                if is_left { "├── " } else { "└── " },
+                node.value
+            )?;
+
+            let new_prefix = if is_left {
+                format!("{}│   ", prefix)
+            } else {
+                format!("{}    ", prefix)
+            };
+
             if let Some(left) = &node.lft {
-                print_tree(left, f, level + 1, "Left: ")?;
+                print_tree(left, f, &new_prefix, true)?;
             }
             if let Some(right) = &node.rgt {
-                print_tree(right, f, level + 1, "Right: ")?;
+                print_tree(right, f, &new_prefix, false)?;
             }
+
             Ok(())
         }
 
-        match &self.root {
-            Some(root) => print_tree(root, f, 0, "Root: ")?,
-            None => writeln!(f, "")?,
-        };
+        if let Some(root) = &self.root {
+            print_tree(root, f, "", false)?;
+        }
+
         Ok(())
     }
 }
