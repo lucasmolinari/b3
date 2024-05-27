@@ -1,11 +1,34 @@
+use std::fmt::{Display, Formatter};
+
 type NodeRef = Box<Node>;
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    lft: Option<NodeRef>,
+    rgt: Option<NodeRef>,
+}
+impl Node {
+    pub fn new(value: i32) -> Self {
+        Self {
+            value,
+            lft: None,
+            rgt: None,
+        }
+    }
+}
+impl From<Node> for Option<NodeRef> {
+    fn from(node: Node) -> Self {
+        Some(Box::new(node))
+    }
+}
 
 #[derive(Debug)]
 pub struct Tree {
     root: Option<NodeRef>,
 }
 impl Tree {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Self { root: None }
     }
     pub fn insert(&mut self, value: i32) {
@@ -30,25 +53,24 @@ impl Tree {
         }
     }
 }
-
-#[derive(Debug)]
-struct Node {
-    value: i32,
-    lft: Option<NodeRef>,
-    rgt: Option<NodeRef>,
-}
-impl Node {
-    pub fn new(value: i32) -> Self {
-        Self {
-            value,
-            lft: None,
-            rgt: None,
+type Result = std::fmt::Result;
+impl Display for Tree {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        fn print_tree(node: &NodeRef, f: &mut Formatter<'_>, level: usize, prefix: &str) -> Result {
+            writeln!(f, "{}{}{}", " ".repeat(level * 4), prefix, node.value)?;
+            if let Some(left) = &node.lft {
+                print_tree(left, f, level + 1, "Left: ")?;
+            }
+            if let Some(right) = &node.rgt {
+                print_tree(right, f, level + 1, "Right: ")?;
+            }
+            Ok(())
         }
-    }
-}
-impl From<Node> for Option<NodeRef> {
-    fn from(node: Node) -> Self {
-        Some(Box::new(node))
-    }
-}
 
+        match &self.root {
+            Some(root) => print_tree(root, f, 0, "Root: ")?,
+            None => writeln!(f, "")?,
+        };
+        Ok(())
+    }
+}
