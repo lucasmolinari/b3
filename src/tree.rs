@@ -1,6 +1,10 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    cell::RefCell,
+    fmt::{Display, Formatter},
+    rc::Rc,
+};
 
-type NodeRef = Box<Node>;
+type NodeRef = Rc<RefCell<Node>>;
 
 #[derive(Debug)]
 struct Node {
@@ -19,7 +23,7 @@ impl Node {
 }
 impl From<Node> for Option<NodeRef> {
     fn from(node: Node) -> Self {
-        Some(Box::new(node))
+        Some(Rc::new(RefCell::new(node)))
     }
 }
 
@@ -33,22 +37,27 @@ impl Tree {
     }
     pub fn insert(&mut self, value: i32) {
         match &mut self.root {
-            Some(node) => Tree::rec(node, value),
+            Some(node) => Tree::irec(node, value),
             None => self.root = Node::new(value).into(),
         };
     }
 
-    fn rec(node: &mut NodeRef, value: i32) {
+    fn irec(node: &mut NodeRef, value: i32) {
+        let mut node = node.borrow_mut();
         if value < node.value {
             match &mut node.lft {
-                Some(n) => Tree::rec(n, value),
-                None => node.lft = Node::new(value).into(),
+                Some(n) => Tree::irec(n, value),
+                None => {
+                    node.lft = Node::new(value).into();
+                }
             }
         }
         if value > node.value {
             match &mut node.rgt {
-                Some(n) => Tree::rec(n, value),
-                None => node.rgt = Node::new(value).into(),
+                Some(n) => Tree::irec(n, value),
+                None => {
+                    node.rgt = Node::new(value).into();
+                }
             }
         }
     }
@@ -63,6 +72,7 @@ impl Display for Tree {
             prefix: &str,
             is_left: bool,
         ) -> FmtResult {
+            let node = node.borrow_mut();
             writeln!(
                 f,
                 "{}{}{}",
