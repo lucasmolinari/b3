@@ -4,8 +4,15 @@ use std::{
     rc::Rc,
 };
 
-type NodeRef = Rc<RefCell<Node>>;
+#[derive(Debug)]
+enum Rotation {
+    L,
+    R,
+    LR,
+    RL,
+}
 
+type NodeRef = Rc<RefCell<Node>>;
 #[derive(Debug)]
 struct Node {
     value: i32,
@@ -19,6 +26,20 @@ impl Node {
             lft: None,
             rgt: None,
         }
+    }
+
+    fn height(&self) -> u64 {
+        let lft_h = match &self.lft {
+            Some(node) => node.borrow().height(),
+            None => 0,
+        };
+
+        let rgt_h = match &self.rgt {
+            Some(node) => node.borrow().height(),
+            None => 0,
+        };
+
+        std::cmp::max(lft_h, rgt_h) + 1
     }
 }
 impl From<Node> for Option<NodeRef> {
@@ -37,29 +58,106 @@ impl Tree {
     }
     pub fn insert(&mut self, value: i32) {
         match &mut self.root {
-            Some(node) => Tree::irec(node, value),
+            Some(root) => {
+                match Tree::irec(root, value) {
+                    Some(Rotation::L) => Tree::l_rotation(root),
+                    Some(Rotation::R) => Tree::r_rotation(root),
+                    Some(Rotation::LR) => println!("Rotation Left Right"),
+                    Some(Rotation::RL) => println!("Rotation Right Left"),
+                    None => println!("No Rotation"),
+                };
+            }
             None => self.root = Node::new(value).into(),
         };
     }
 
-    fn irec(node: &mut NodeRef, value: i32) {
-        let mut node = node.borrow_mut();
-        if value < node.value {
-            match &mut node.lft {
-                Some(n) => Tree::irec(n, value),
+    fn irec(parent: &mut NodeRef, value: i32) -> Option<Rotation> {
+        let mut parent = parent.borrow_mut();
+
+        if value < parent.value {
+            match &mut parent.lft {
+                Some(lft) => _ = Tree::irec(lft, value),
                 None => {
-                    node.lft = Node::new(value).into();
+                    parent.lft = Node::new(value).into();
+                    return None;
                 }
             }
         }
-        if value > node.value {
-            match &mut node.rgt {
-                Some(n) => Tree::irec(n, value),
+        if value > parent.value {
+            match &mut parent.rgt {
+                Some(rgt) => _ = Tree::irec(rgt, value),
                 None => {
-                    node.rgt = Node::new(value).into();
+                    parent.rgt = Node::new(value).into();
+                    return None;
                 }
             }
         }
+
+        let (lft_h, lft_v) = match &parent.lft {
+            Some(l) => (l.borrow().height() as i64, l.borrow().value),
+            None => (0, 0),
+        };
+
+        let (rgt_h, rgt_v) = match &parent.rgt {
+            Some(r) => (r.borrow().height() as i64, r.borrow().value),
+            None => (0, 0),
+        };
+
+        println!(
+            "Left Value: {} | Right Value: {} | Value: {}",
+            lft_v, rgt_v, value
+        );
+        if lft_h - rgt_h > 1 {
+            if lft_v > value {
+                println!("Returning Rotation R");
+                return Some(Rotation::R);
+            } else {
+                println!("Returning Rotation LR");
+                return Some(Rotation::LR);
+            }
+        }
+
+        if lft_h - rgt_h < -1 {
+            if rgt_v < value {
+                println!("Returning Rotation L");
+                return Some(Rotation::L);
+            } else {
+                println!("Returning Rotation RL");
+                return Some(Rotation::RL);
+            }
+        }
+
+        None
+    }
+
+    fn l_rotation(root: &mut NodeRef) {
+        let yrc;
+
+        {
+            let mut z = root.borrow_mut();
+            yrc = z.rgt.as_ref().expect("Should have Right Child").clone();
+            let mut y = yrc.borrow_mut();
+            z.rgt = y.lft.take();
+        }
+
+        let mut y = yrc.borrow_mut();
+        y.lft = Some(root.clone());
+        *root = yrc.clone();
+    }
+
+    fn r_rotation(root: &mut NodeRef) {
+        let yrc;
+
+        {
+            let mut z = root.borrow_mut();
+            yrc = z.lft.as_ref().expect("Should have Left Child").clone();
+            let mut y = yrc.borrow_mut();
+            z.lft = y.rgt.take();
+        }
+
+        let mut y = yrc.borrow_mut();
+        y.rgt = Some(root.clone());
+        *root = yrc.clone();
     }
 }
 
