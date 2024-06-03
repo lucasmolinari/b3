@@ -13,6 +13,7 @@ enum Rotation {
 }
 
 type NodeRef = Rc<RefCell<Node>>;
+
 #[derive(Debug)]
 struct Node {
     value: i32,
@@ -60,23 +61,23 @@ impl Tree {
         match &mut self.root {
             Some(root) => {
                 match Tree::irec(root, value) {
-                    Some(Rotation::L) => Tree::l_rotation(root),
-                    Some(Rotation::R) => Tree::r_rotation(root),
-                    Some(Rotation::LR) => println!("Rotation Left Right"),
-                    Some(Rotation::RL) => println!("Rotation Right Left"),
-                    None => println!("No Rotation"),
+                    Some(rotation) => Tree::rotate(root, rotation),
+                    None => {}
                 };
             }
             None => self.root = Node::new(value).into(),
         };
     }
 
-    fn irec(parent: &mut NodeRef, value: i32) -> Option<Rotation> {
-        let mut parent = parent.borrow_mut();
+    fn irec(root: &mut NodeRef, value: i32) -> Option<Rotation> {
+        let mut rotation: Option<Rotation> = None;
+
+        let mut parent = root.borrow_mut();
 
         if value < parent.value {
             match &mut parent.lft {
-                Some(lft) => _ = Tree::irec(lft, value),
+                Some(lft) => rotation = Tree::irec(lft, value),
+
                 None => {
                     parent.lft = Node::new(value).into();
                     return None;
@@ -85,7 +86,7 @@ impl Tree {
         }
         if value > parent.value {
             match &mut parent.rgt {
-                Some(rgt) => _ = Tree::irec(rgt, value),
+                Some(rgt) => rotation = Tree::irec(rgt, value),
                 None => {
                     parent.rgt = Node::new(value).into();
                     return None;
@@ -103,31 +104,37 @@ impl Tree {
             None => (0, 0),
         };
 
-        println!(
-            "Left Value: {} | Right Value: {} | Value: {}",
-            lft_v, rgt_v, value
-        );
         if lft_h - rgt_h > 1 {
             if lft_v > value {
-                println!("Returning Rotation R");
                 return Some(Rotation::R);
             } else {
-                println!("Returning Rotation LR");
                 return Some(Rotation::LR);
             }
         }
 
         if lft_h - rgt_h < -1 {
             if rgt_v < value {
-                println!("Returning Rotation L");
                 return Some(Rotation::L);
             } else {
-                println!("Returning Rotation RL");
                 return Some(Rotation::RL);
             }
         }
 
+        drop(parent);
+        match rotation {
+            Some(rotation) => Tree::rotate(root, rotation),
+            None => {}
+        };
+
         None
+    }
+
+    fn rotate(root: &mut NodeRef, rotation: Rotation) {
+        match rotation {
+            Rotation::L => Tree::l_rotation(root),
+            Rotation::R => Tree::r_rotation(root),
+            _ => println!("Rotation: {:?}", rotation),
+        }
     }
 
     fn l_rotation(root: &mut NodeRef) {
