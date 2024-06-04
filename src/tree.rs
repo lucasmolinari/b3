@@ -1,45 +1,6 @@
-use std::{
-    cell::RefCell,
-    fmt::{Display, Formatter},
-    rc::Rc,
-};
+use std::fmt::{Display, Formatter};
 
-type NodeRef = Rc<RefCell<Node>>;
-
-#[derive(Debug)]
-struct Node {
-    value: i32,
-    lft: Option<NodeRef>,
-    rgt: Option<NodeRef>,
-}
-impl Node {
-    pub fn new(value: i32) -> Self {
-        Self {
-            value,
-            lft: None,
-            rgt: None,
-        }
-    }
-
-    fn height(&self) -> u64 {
-        let lft_h = match &self.lft {
-            Some(node) => node.borrow().height(),
-            None => 0,
-        };
-
-        let rgt_h = match &self.rgt {
-            Some(node) => node.borrow().height(),
-            None => 0,
-        };
-
-        std::cmp::max(lft_h, rgt_h) + 1
-    }
-}
-impl From<Node> for Option<NodeRef> {
-    fn from(node: Node) -> Self {
-        Some(Rc::new(RefCell::new(node)))
-    }
-}
+use crate::node::{Node, NodeRef};
 
 #[derive(Debug)]
 pub struct Tree {
