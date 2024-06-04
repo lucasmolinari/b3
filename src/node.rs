@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::Display, rc::Rc};
 
 pub type NodeRef = Rc<RefCell<Node>>;
 
@@ -34,5 +34,46 @@ impl Node {
 impl From<Node> for Option<NodeRef> {
     fn from(node: Node) -> Self {
         Some(Rc::new(RefCell::new(node)))
+    }
+}
+impl Display for Node {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match (&self.lft, &self.rgt) {
+            (None, None) => write!(f, "{}", self.value),
+            (None, Some(rgt)) => {
+                write!(
+                    f,
+                    r"
+    {}
+   /  \
+ ()    {}",
+                    self.value,
+                    rgt.borrow().value
+                )
+            }
+            (Some(lft), None) => {
+                write!(
+                    f,
+                    r"
+    {}
+   /  \
+ {}    ()",
+                    self.value,
+                    lft.borrow().value
+                )
+            }
+            (Some(lft), Some(rgt)) => {
+                write!(
+                    f,
+                    r"
+    {}
+   /  \
+ {}    {}",
+                    self.value,
+                    lft.borrow().value,
+                    rgt.borrow().value,
+                )
+            }
+        }
     }
 }
