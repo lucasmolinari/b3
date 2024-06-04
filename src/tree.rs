@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    rc::Rc,
+};
 
 use crate::node::{Node, NodeRef};
 
@@ -10,11 +13,43 @@ impl Tree {
     pub fn new() -> Self {
         Self { root: None }
     }
+
     pub fn insert(&mut self, value: i32) {
         match &mut self.root {
             Some(root) => Tree::irec(root, value),
             None => self.root = Node::new(value).into(),
         };
+    }
+
+    pub fn search(&self, value: i32) -> Option<NodeRef> {
+        match &self.root {
+            Some(root) => Tree::srec(root, value),
+            None => None,
+        }
+    }
+
+    fn srec(root: &NodeRef, value: i32) -> Option<NodeRef> {
+        let node = root.borrow();
+
+        if node.value == value {
+            return Some(Rc::clone(root));
+        }
+
+        if value < node.value {
+            match &node.lft {
+                Some(lft) => return Tree::srec(lft, value),
+                None => return None,
+            }
+        }
+
+        if value > node.value {
+            match &node.rgt {
+                Some(rgt) => return Tree::srec(&rgt, value),
+                None => return None,
+            }
+        }
+
+        None
     }
 
     fn irec(root: &mut NodeRef, value: i32) {
