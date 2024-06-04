@@ -4,6 +4,7 @@ A self-balancing Binary Tree ([AVL](https://en.wikipedia.org/wiki/AVL_tree)) imp
 
 ### Supported operations (WIP)
  - Insertion
+ - Search
 
 **Example:** 
 ```rust
