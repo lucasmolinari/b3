@@ -159,6 +159,10 @@ impl Tree {
 type FmtResult = std::fmt::Result;
 impl Display for Tree {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        fn print_empty(f: &mut Formatter<'_>, prefix: &str, is_left: bool) -> FmtResult {
+            writeln!(f, "{}{}()", prefix, if is_left { "├── " } else { "└── " })?;
+            Ok(())
+        }
         fn print_tree(
             node: &NodeRef,
             f: &mut Formatter<'_>,
@@ -180,11 +184,19 @@ impl Display for Tree {
                 format!("{}    ", prefix)
             };
 
+            if node.lft.is_none() && node.rgt.is_none() {
+                return Ok(());
+            }
+
             if let Some(left) = &node.lft {
                 print_tree(left, f, &new_prefix, true)?;
+            } else {
+                print_empty(f, &new_prefix, true)?;
             }
             if let Some(right) = &node.rgt {
                 print_tree(right, f, &new_prefix, false)?;
+            } else {
+                print_empty(f, &new_prefix, false)?;
             }
 
             Ok(())
